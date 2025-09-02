@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<title>Cuenta confirmada • RadarPet</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="color-scheme" content="dark" />
+<style>
+  :root {
+    --ok:#27c93f;
+    --fg:#e8e8e8;
+    --bg:#050505;
+    --accent:#1f1f1f;
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  }
+  html,body {height:100%;margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);}
+  body {
+    display:flex;align-items:center;justify-content:center;padding:32px;
+    background:
+      radial-gradient(circle at 15% 20%, #111 0 25%, transparent 26%) 0 0/160px 160px,
+      radial-gradient(circle at 75% 70%, #111 0 25%, transparent 26%) 40px 40px/160px 160px,
+      repeating-linear-gradient(45deg,#0b0b0b 0 10px,#0d0d0d 10px 20px);
+  }
+  .card {
+    width:100%;max-width:440px;background:linear-gradient(145deg,#0e0e0e,#141414);
+    border:1px solid #222;border-radius:20px;padding:40px 34px;
+    box-shadow:0 0 0 1px #000,0 8px 28px -8px #000;
+    position:relative;
+  }
+  .check {
+    width:84px;height:84px;border-radius:50%;
+    background:rgba(39,201,63,0.12);display:flex;align-items:center;justify-content:center;
+    margin:0 auto 28px;border:2px solid var(--ok);position:relative;
+  }
+  .check::after{
+    content:"✓";font-size:46px;color:var(--ok);font-weight:600;
+    text-shadow:0 0 12px rgba(39,201,63,0.6);
+  }
+  h1 {text-align:center;font-size:1.65rem;line-height:1.2;margin:0 0 16px;}
+  p {text-align:center;margin:0 0 22px;color:#bdbdbd;font-size:0.98rem;}
+  .dogs {
+    font-size:26px;text-align:center;letter-spacing:6px;margin-bottom:18px;opacity:.9;
+  }
+  .btn {
+    display:block;width:100%;text-decoration:none;
+    background:var(--ok);color:#042407;font-weight:600;
+    text-align:center;padding:14px 20px;border-radius:14px;
+    font-size:1rem;transition:.25s box-shadow, .25s transform;
+    box-shadow:0 0 0 0 var(--ok),0 4px 14px -6px rgba(39,201,63,.55);
+  }
+  .btn:hover {box-shadow:0 0 0 4px rgba(39,201,63,.2),0 6px 22px -8px rgba(39,201,63,.7);}
+  .btn:active {transform:translateY(1px);}
+  .small {margin-top:22px;font-size:.75rem;text-align:center;color:#666;}
+  .fade {animation:fade .6s ease;}
+  @keyframes fade {from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none}}
+  .error {border-color:#b60000}
+  .error .check::after{content:"!"}
+</style>
+</head>
+<body>
+<div id="root" class="card fade">
+  <div class="check" id="icon"></div>
+  <div class="dogs">🐶 🐕 🐾 🐩 🐕‍🦺</div>
+  <h1 id="title">Confirmando tu cuenta…</h1>
+  <p id="msg">Procesando el enlace de verificación. Espera un momento.</p>
+  <a id="go" href="/" class="btn" style="display:none">Entrar a la app</a>
+  <div class="small" id="small"></div>
+</div>
+
+<script type="module">
+  import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+  const SUPABASE_URL = "https://goxopvfsbdyyxysxirhc.supabase.co";
+  const SUPABASE_ANON_KEY = "REEMPLAZA_CON_TU_ANON_KEY";
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const hash = window.location.hash.substring(1);
+  const qp = new URLSearchParams(hash);
+  const type = qp.get('type');
+  const access_token = qp.get('access_token');
+  const refresh_token = qp.get('refresh_token');
+
+  const titleEl = document.getElementById('title');
+  const msgEl   = document.getElementById('msg');
+  const goEl    = document.getElementById('go');
+  const smallEl = document.getElementById('small');
+  const card    = document.getElementById('root');
+
+  async function finalize() {
+    try {
+      if (type === 'signup' && access_token) {
+        // Guardar sesión local (para que al abrir tu PWA esté autenticado)
+        await supabase.auth.setSession({
+          access_token,
+          refresh_token
+        });
+        titleEl.textContent = "¡Cuenta confirmada!";
+        msgEl.textContent = "Tu correo ha sido verificado. Ya puedes ingresar.";
+        goEl.style.display = 'block';
+        smallEl.textContent = "Si cerraste la app, vuelve y ya tendrás sesión iniciada.";
+      } else {
+        titleEl.textContent = "Enlace inválido";
+        msgEl.textContent = "El enlace ha expirado o ya fue usado.";
+        card.classList.add('error');
+      }
+    } catch (e) {
+      titleEl.textContent = "Error al confirmar";
+      msgEl.textContent = (e && e.message) || "Intenta solicitar otro correo.";
+      card.classList.add('error');
+    }
+  }
+  finalize();
+</script>
+</body>
+</html>
